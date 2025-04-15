@@ -3,11 +3,7 @@ entries:
   elasticsearch:
   - apiVersion: v1
     appVersion: 8.5.1
-<<<<<<< HEAD
-    created: "2025-04-15T20:08:21.652521036+05:00"
-=======
-    created: "2025-04-15T20:33:49.380577487+05:00"
->>>>>>> fb2cd1e (test repo)
+    created: "2025-04-15T20:43:33.526346852+05:00"
     description: Official Elastic helm chart for Elasticsearch
     digest: 8a5e70ec72dc480c8a01b079bf7240722da7d017f5683178e23a745d418448ba
     home: https://github.com/elastic/helm-charts
@@ -19,12 +15,6 @@ entries:
     sources:
     - https://github.com/elastic/elasticsearch
     urls:
-<<<<<<< HEAD
-    - https://ramili4.github.io/helm-charts-repo/elasticsearch-8.5.1.tgz
-    version: 8.5.1
-generated: "2025-04-15T20:08:21.639443734+05:00"
-=======
     - https://ramili4.github.io/helm-charts-repo/charts/elasticsearch-8.5.1.tgz
     version: 8.5.1
-generated: "2025-04-15T20:33:49.367657687+05:00"
->>>>>>> fb2cd1e (test repo)
+generated: "2025-04-15T20:43:33.512535654+05:00"
