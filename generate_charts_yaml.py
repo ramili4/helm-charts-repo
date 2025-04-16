@@ -1,7 +1,7 @@
 import yaml
 
 # Load index.yaml from your charts directory
-with open('charts/index.yaml', 'r') as index_file:
+with open('index.yaml', 'r') as index_file:
     index_data = yaml.safe_load(index_file)
 
 charts = []
@@ -16,7 +16,7 @@ for chart_name, versions in index_data.get('entries', {}).items():
         })
 
 # Save as charts.yaml
-with open('charts/charts.yaml', 'w') as out_file:
+with open('charts.yaml', 'w') as out_file:
     yaml.dump({'charts': charts}, out_file, default_flow_style=False)
 
 print("✅ charts.yaml generated.")
