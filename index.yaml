@@ -1,0 +1,119 @@
+apiVersion: v1
+entries:
+  elasticsearch:
+  - apiVersion: v1
+    appVersion: 8.5.1
+    created: "2025-04-16T16:49:42.565331408+05:00"
+    description: Official Elastic helm chart for Elasticsearch
+    digest: 8a5e70ec72dc480c8a01b079bf7240722da7d017f5683178e23a745d418448ba
+    home: https://github.com/elastic/helm-charts
+    icon: https://helm.elastic.co/icons/elasticsearch.png
+    maintainers:
+    - email: helm-charts@elastic.co
+      name: Elastic
+    name: elasticsearch
+    sources:
+    - https://github.com/elastic/elasticsearch
+    urls:
+    - https://ramili4.github.io/helm-charts-repo/elasticsearch-8.5.1.tgz
+    version: 8.5.1
+  - apiVersion: v1
+    appVersion: 8.5.1
+    created: "2025-04-16T16:49:42.586112508+05:00"
+    description: Official Elastic helm chart for Elasticsearch
+    digest: 8a5e70ec72dc480c8a01b079bf7240722da7d017f5683178e23a745d418448ba
+    home: https://github.com/elastic/helm-charts
+    icon: https://helm.elastic.co/icons/elasticsearch.png
+    maintainers:
+    - email: helm-charts@elastic.co
+      name: Elastic
+    name: elasticsearch
+    sources:
+    - https://github.com/elastic/elasticsearch
+    urls:
+    - https://ramili4.github.io/helm-charts-repo/charts/elasticsearch-8.5.1.tgz
+    version: 8.5.1
+  nginx:
+  - annotations:
+      category: Infrastructure
+      images: |
+        - name: git
+          image: docker.io/bitnami/git:2.49.0-debian-12-r4
+        - name: nginx
+          image: docker.io/bitnami/nginx:1.27.4-debian-12-r9
+        - name: nginx-exporter
+          image: docker.io/bitnami/nginx-exporter:1.4.1-debian-12-r13
+      licenses: Apache-2.0
+      tanzuCategory: clusterUtility
+    apiVersion: v2
+    appVersion: 1.27.4
+    created: "2025-04-16T16:49:42.576125908+05:00"
+    dependencies:
+    - name: common
+      repository: oci://registry-1.docker.io/bitnamicharts
+      tags:
+      - bitnami-common
+      version: 2.x.x
+    description: NGINX Open Source is a web server that can be also used as a reverse
+      proxy, load balancer, and HTTP cache. Recommended for high-demanding sites due
+      to its ability to provide faster content.
+    digest: 95fa529f2ae52259b0ce4ec995a4ff3f03ddd3852cfd5dee268ef2eae98ce71e
+    home: https://bitnami.com
+    icon: https://dyltqmyl993wv.cloudfront.net/assets/stacks/nginx/img/nginx-stack-220x234.png
+    keywords:
+    - nginx
+    - http
+    - web
+    - www
+    - reverse proxy
+    maintainers:
+    - name: Broadcom, Inc. All Rights Reserved.
+      url: https://github.com/bitnami/charts
+    name: nginx
+    sources:
+    - https://github.com/bitnami/charts/tree/main/bitnami/nginx
+    urls:
+    - https://ramili4.github.io/helm-charts-repo/nginx-19.1.0.tgz
+    version: 19.1.0
+  - annotations:
+      category: Infrastructure
+      images: |
+        - name: git
+          image: docker.io/bitnami/git:2.49.0-debian-12-r4
+        - name: nginx
+          image: docker.io/bitnami/nginx:1.27.4-debian-12-r9
+        - name: nginx-exporter
+          image: docker.io/bitnami/nginx-exporter:1.4.1-debian-12-r13
+      licenses: Apache-2.0
+      tanzuCategory: clusterUtility
+    apiVersion: v2
+    appVersion: 1.27.4
+    created: "2025-04-16T16:49:42.600313908+05:00"
+    dependencies:
+    - name: common
+      repository: oci://registry-1.docker.io/bitnamicharts
+      tags:
+      - bitnami-common
+      version: 2.x.x
+    description: NGINX Open Source is a web server that can be also used as a reverse
+      proxy, load balancer, and HTTP cache. Recommended for high-demanding sites due
+      to its ability to provide faster content.
+    digest: 95fa529f2ae52259b0ce4ec995a4ff3f03ddd3852cfd5dee268ef2eae98ce71e
+    home: https://bitnami.com
+    icon: https://dyltqmyl993wv.cloudfront.net/assets/stacks/nginx/img/nginx-stack-220x234.png
+    keywords:
+    - nginx
+    - http
+    - web
+    - www
+    - reverse proxy
+    maintainers:
+    - name: Broadcom, Inc. All Rights Reserved.
+      url: https://github.com/bitnami/charts
+    name: nginx
+    sources:
+    - https://github.com/bitnami/charts/tree/main/bitnami/nginx
+    urls:
+    - https://ramili4.github.io/helm-charts-repo/charts/nginx-19.1.0.tgz
+    version: 19.1.0
+generated: "2025-04-16T16:49:42.556813108+05:00"
