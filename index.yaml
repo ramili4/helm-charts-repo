@@ -124,7 +124,7 @@ entries:
       artifacthub.io/license: Apache-2.0
       artifacthub.io/links: |
         - name: Sources
-          url: https://github.com/VictoriaMetrics/helm-charts/tree/master/charts/victoria-metrics-operator
+          url: https://github.com/VictoriaMetrics/helm-charts/tree/master/victoria-metrics-operator
         - name: Charts repo
           url: https://victoriametrics.github.io/helm-charts/
         - name: Docs
@@ -164,6 +164,6 @@ entries:
     - https://github.com/VictoriaMetrics/operator
     type: application
     urls:
-    - https://ramili4.github.io/helm-charts-repo/charts/victoria-metrics-operator-0.44.0.tgz
+    - https://ramili4.github.io/helm-charts-repo/victoria-metrics-operator-0.44.0.tgz
     version: 0.44.0
 generated: "2025-04-16T17:33:25.814133857+05:00"
