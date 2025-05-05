@@ -130,8 +130,9 @@ EOF
 cat > domains.txt << 'EOF'
 # Список доменов для проверки
 # Каждый домен на отдельной строке
-link.alfabank.ru
-esbwsalbo.moscow.alfaintra.net
+google.com
+mail.com
+amazon.com
 EOF
 
 # Выдача прав на исполнение
