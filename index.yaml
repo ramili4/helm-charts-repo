@@ -3,7 +3,7 @@ entries:
   elasticsearch:
   - apiVersion: v1
     appVersion: 8.5.1
-    created: "2025-04-16T17:33:25.833432658+05:00"
+    created: "2025-05-05T11:51:33.380415566+03:00"
     description: Official Elastic helm chart for Elasticsearch
     digest: 8a5e70ec72dc480c8a01b079bf7240722da7d017f5683178e23a745d418448ba
     home: https://github.com/elastic/helm-charts
@@ -19,7 +19,7 @@ entries:
     version: 8.5.1
   - apiVersion: v1
     appVersion: 8.5.1
-    created: "2025-04-16T17:33:25.941449664+05:00"
+    created: "2025-05-05T11:51:33.459279802+03:00"
     description: Official Elastic helm chart for Elasticsearch
     digest: 8a5e70ec72dc480c8a01b079bf7240722da7d017f5683178e23a745d418448ba
     home: https://github.com/elastic/helm-charts
@@ -47,7 +47,7 @@ entries:
       tanzuCategory: clusterUtility
     apiVersion: v2
     appVersion: 1.27.4
-    created: "2025-04-16T17:33:25.858120959+05:00"
+    created: "2025-05-05T11:51:33.396269394+03:00"
     dependencies:
     - name: common
       repository: oci://registry-1.docker.io/bitnamicharts
@@ -88,7 +88,7 @@ entries:
       tanzuCategory: clusterUtility
     apiVersion: v2
     appVersion: 1.27.4
-    created: "2025-04-16T17:33:25.970941165+05:00"
+    created: "2025-05-05T11:51:33.476102038+03:00"
     dependencies:
     - name: common
       repository: oci://registry-1.docker.io/bitnamicharts
@@ -124,7 +124,7 @@ entries:
       artifacthub.io/license: Apache-2.0
       artifacthub.io/links: |
         - name: Sources
-          url: https://github.com/VictoriaMetrics/helm-charts/tree/master/victoria-metrics-operator
+          url: https://github.com/VictoriaMetrics/helm-charts/tree/master/charts/victoria-metrics-operator
         - name: Charts repo
           url: https://victoriametrics.github.io/helm-charts/
         - name: Docs
@@ -134,7 +134,7 @@ entries:
       artifacthub.io/operator: "true"
     apiVersion: v2
     appVersion: v0.55.0
-    created: "2025-04-16T17:33:25.918277462+05:00"
+    created: "2025-05-05T11:51:33.447210205+03:00"
     dependencies:
     - name: victoria-metrics-common
       repository: https://victoriametrics.github.io/helm-charts
@@ -166,4 +166,4 @@ entries:
     urls:
     - https://ramili4.github.io/helm-charts-repo/victoria-metrics-operator-0.44.0.tgz
     version: 0.44.0
-generated: "2025-04-16T17:33:25.814133857+05:00"
+generated: "2025-05-05T11:51:33.368852773+03:00"
