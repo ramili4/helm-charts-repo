@@ -1,0 +1,7 @@
+charts:
+- name: elasticsearch
+  version: 8.5.1
+- name: nginx
+  version: 19.1.0
+- name: victoria-metrics-operator
+  version: 0.44.0
