@@ -1,0 +1,5 @@
+charts:
+- name: elasticsearch
+  version: 8.5.1
+- name: nginx
+  version: 19.1.0
