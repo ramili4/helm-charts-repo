@@ -6,19 +6,33 @@ data:
   install-istio.sh: |
     #!/bin/sh
     set -e
-    ISTIO_VERSION="{{ .Values.global.istio.version | default .Chart.AppVersion }}"
+
+    # Берём версию только для каталогов и флага istioctl, URL полон
+    ISTIO_VERSION="{{ .Values.global.istio.version }}"
     DOWNLOAD="{{ .Values.global.istio.downloadUrl }}"
-    echo "Downloading istioctl $ISTIO_VERSION"
-    curl -sSL "$DOWNLOAD/$ISTIO_VERSION/istioctl-${ISTIO_VERSION}-linux-amd64.tar.gz" -o istioctl.tar.gz
+
+    echo "Downloading istioctl ${ISTIO_VERSION}"
+    curl -sSL "${DOWNLOAD}" -o istioctl.tar.gz
     tar -xzf istioctl.tar.gz
     chmod +x istioctl
-    ./istioctl install -f /manifests/istio-operator.yml -y
+
+    echo "Installing Istio..."
+    ./istioctl install -f /manifests/istio-operator.yml -y --revision "${ISTIO_VERSION}"
+
     {{- if .Values.istio.ingressgatewayEnabled }}
+    echo "Applying default gateway..."
     kubectl apply -f /manifests/istio-default-gateway.yml
     {{- end }}
+
     {{- if .Values.istio.prometheusScrape }}
+    echo "Applying ServiceMonitor..."
     kubectl apply -f /manifests/istio-scrapping-sm.yml
     {{- end }}
+
     {{- if .Values.istio.cpuLimitsDisabled }}
+    echo "Patching sidecar injector (CPU limits off)..."
     kubectl patch -f /manifests/istio-sidecar-injector.yaml --patch-file /manifests/istio-sidecar-injector.yaml
     {{- end }}
+
+    echo "Restarting istiod..."
+    kubectl rollout restart deployment istiod -n istio-system
