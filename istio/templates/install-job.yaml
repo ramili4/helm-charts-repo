@@ -2,37 +2,67 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: istio-install
+  namespace: {{ .Release.Namespace }}
   annotations:
     "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "-10"
     "helm.sh/hook-delete-policy": hook-succeeded
 spec:
   template:
     spec:
-      restartPolicy: Never
       serviceAccountName: istio-installer
+      restartPolicy: Never
       containers:
-      - name: installer
-        image: alpine:3.19  # ← Better choice
-        command: ["/bin/sh", "-c"]
-        args:
-        - |
-          apk add --no-cache curl tar kubectl
-          /scripts/install-istio.sh
-        env:
-        - name: ISTIO_VERSION
-          value: "{{ .Values.global.istio.version }}"
-        - name: DOWNLOAD_URL
-          value: "{{ .Values.global.istio.downloadUrl }}"
-        volumeMounts:
-        - name: scripts
-          mountPath: /scripts
-        - name: manifests
-          mountPath: /manifests
+        - name: installer
+          image: curlimages/curl:8.7.1
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              apk add --no-cache tar
+              echo "* download istioctl {{ .Values.global.istio.version }}"
+              curl -sSL "{{ .Values.global.istio.downloadUrl }}" -o istioctl.tgz
+              tar -xzf istioctl.tgz
+              mv istioctl*/bin/istioctl ./ && chmod +x istioctl
+
+              # уникальная ревизия = helm release number
+              REV="rev{{ .Release.Revision }}"
+              echo "* install Istio revision $REV"
+              ./istioctl install -y -f /manifests/istio-operator.yml --revision "$REV"
+
+              # привязываем default-tag один раз (если ещё нет)
+              ./istioctl tag set default --revision "$REV" || true
+
+              {{- if .Values.istio.ingressgatewayEnabled }}
+              kubectl apply -f /manifests/istio-default-gateway.yml
+              {{- end }}
+
+              {{- if .Values.istio.prometheusScrape }}
+              kubectl apply -f /manifests/istio-scrapping-sm.yml
+              {{- end }}
+
+              {{- if .Values.istio.cpuLimitsDisabled }}
+              kubectl patch -f /manifests/istio-sidecar-injector.yaml \
+                            --patch-file /manifests/istio-sidecar-injector.yaml
+              {{- end }}
       volumes:
-      - name: scripts
-        configMap:
-          name: istio-installer-scripts
-          defaultMode: 0755
-      - name: manifests
-        configMap:
-          name: istio-installer-manifests
+        - name: manifests
+          configMap:
+            name: istio-installer-manifests
+---
+# монтируем manifests (если ещё не было)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: istio-installer-manifests
+  namespace: {{ .Release.Namespace }}
+data:
+  istio-operator.yml: |
+{{ .Files.Get "files/istio-operator.yml" | indent 4 }}
+  istio-default-gateway.yml: |
+{{ .Files.Get "files/istio-default-gateway.yml" | indent 4 }}
+  istio-scrapping-sm.yml: |
+{{ .Files.Get "files/istio-scrapping-sm.yml" | indent 4 }}
+  istio-sidecar-injector.yaml: |
+{{ .Files.Get "files/istio-sidecar-injector.yaml" | indent 4 }}
