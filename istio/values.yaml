@@ -1,7 +1,7 @@
 global:
   istio:
     version: ""
-    repository: "docker-hub.binary.alfabank.ru/istio"
+    repository: ""
     downloadUrl: "https://github.com/istio/istio/releases/download/1.17.1/istioctl-1.17.1-linux-amd64.tar.gz"
   infra:
     nodeSelector: "node.kubernetes.io/role"
