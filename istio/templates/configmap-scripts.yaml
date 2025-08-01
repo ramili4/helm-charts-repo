@@ -7,6 +7,9 @@ data:
     #!/bin/sh
     set -e
 
+    # образ curlimages основан на Alpine → добавим tar
+    apk add --no-cache tar
+
     echo "=== Istio binary installer ==="
     echo "Version: ${ISTIO_VERSION}"
     echo "URL:     ${DOWNLOAD_URL}"
@@ -16,10 +19,10 @@ data:
 
     echo "* Downloading istioctl..."
     curl -sSL "${DOWNLOAD_URL}" -o istioctl.tar.gz
-
-    echo "* Extracting..."
     tar -xzf istioctl.tar.gz
     chmod +x istioctl
+    ...
+
 
     echo "* Installing Istio (istioctl install)..."
     ./istioctl install -f /manifests/istio-operator.yml -y --revision "${ISTIO_VERSION}"
