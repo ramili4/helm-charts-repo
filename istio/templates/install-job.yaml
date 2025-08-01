@@ -9,7 +9,7 @@ spec:
   template:
     spec:
       restartPolicy: Never
-      serviceAccountName: default
+      serviceAccountName: istio-installer
       containers:
       - name: installer
         image: alpine:3.19  # ← Better choice
