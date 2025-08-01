@@ -1,1 +1,32 @@
-
+apiVersion: batch/v1
+kind: Job
+metadata:
+  generateName: istio-preclean-           # новое имя на каждую синхронизацию
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-30"           # выполняется раньше install-Job (-10/0)
+    "helm.sh/hook-delete-policy": hook-succeeded,before-hook-creation
+spec:
+  ttlSecondsAfterFinished: 60
+  template:
+    spec:
+      serviceAccountName: istio-installer
+      restartPolicy: Never
+      containers:
+        - name: cleaner
+          image: curlimages/curl:8.7.1
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              apk add --no-cache tar
+              echo "* downloading istioctl {{ .Values.global.istio.version }}"
+              curl -sSL "{{ .Values.global.istio.downloadUrl }}" -o istioctl.tgz
+              tar -xzf istioctl.tgz
+              mv istioctl*/bin/istioctl ./ && chmod +x istioctl
+              echo "* remove default tag (ignore errors)…"
+              ./istioctl tag remove default -y || true
+              echo "* purge previous Istio (ignore errors)…"
+              yes | ./istioctl x uninstall --purge || true
