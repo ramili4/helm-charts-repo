@@ -7,8 +7,11 @@ data:
     #!/bin/sh
     set -e
 
-    # образ curlimages основан на Alpine → добавим tar
+    # curlimages/curl уже содержит curl; нужен только tar
     apk add --no-cache tar
+
+    ISTIO_VERSION="{{ .Values.global.istio.version }}"
+    DOWNLOAD_URL="{{ .Values.global.istio.downloadUrl }}"
 
     echo "=== Istio binary installer ==="
     echo "Version: ${ISTIO_VERSION}"
@@ -19,32 +22,29 @@ data:
 
     echo "* Downloading istioctl..."
     curl -sSL "${DOWNLOAD_URL}" -o istioctl.tar.gz
+
+    echo "* Extracting..."
     tar -xzf istioctl.tar.gz
+
+    # 🔧 ПАТЧ: перемещаем бинарь из подпапки в рабочий каталог
+    mv istioctl-*/bin/istioctl ./          # <-- добавлено
     chmod +x istioctl
-    ...
 
-
-    echo "* Installing Istio (istioctl install)..."
+    echo "* Installing Istio..."
     ./istioctl install -f /manifests/istio-operator.yml -y --revision "${ISTIO_VERSION}"
 
     {{- if .Values.istio.ingressgatewayEnabled }}
-    echo "* Applying default gateway..."
     kubectl apply -f /manifests/istio-default-gateway.yml
     {{- end }}
 
     {{- if .Values.istio.prometheusScrape }}
-    echo "* Applying ServiceMonitor..."
     kubectl apply -f /manifests/istio-scrapping-sm.yml
     {{- end }}
 
     {{- if .Values.istio.cpuLimitsDisabled }}
-    echo "* Patching sidecar injector (CPU limits off)..."
     kubectl patch -f /manifests/istio-sidecar-injector.yaml \
                   --patch-file /manifests/istio-sidecar-injector.yaml
     {{- end }}
 
-    echo "* Restarting istiod..."
     kubectl rollout restart deployment/istiod -n istio-system
     kubectl rollout status  deployment/istiod -n istio-system --timeout=300s
-
-    echo "=== Istio installation completed ==="
