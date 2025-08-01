@@ -1,46 +1,38 @@
 apiVersion: install.istio.io/v1alpha1
 kind: IstioOperator
 metadata:
+  name: istio         # имя CR
   namespace: istio-system
   labels:
-    "app.kubernetes.io/managed-by": Ansible
+    app.kubernetes.io/managed-by: Helm
 spec:
-  hub: {{ istio_repository }}
-  tag: {{ istio_version }}
+  hub: docker.io/istio
+  tag: 1.17.1
 
   meshConfig:
     ingressControllerMode: 'DEFAULT'
-
     defaultConfig:
       holdApplicationUntilProxyStarts: true
       tracing: {}
-      proxyMetadata: {
-        "BOOTSTRAP_XDS_AGENT": "true"
-      }
+      proxyMetadata:
+        BOOTSTRAP_XDS_AGENT: "true"
       proxyStatsMatcher:
         inclusionRegexps:
         - mongo.*
-
     extensionProviders:
-      - name: zipkin-jaeger
-        zipkin:
-          service: jaeger-operator-jaeger-collector.jaeger-operator.svc.cluster.local
-          port: 9411
-
+    - name: zipkin-jaeger
+      zipkin:
+        service: jaeger-operator-jaeger-collector.jaeger-operator.svc.cluster.local
+        port: 9411
     outboundTrafficPolicy:
       mode: ALLOW_ANY
-
-    #  Current namespace
     defaultServiceExportTo: 
-      - '.' 
-{% if istio_ingressgateway_enabled | bool %}
-      - 'istio-ingress' 
-{% endif %}
+      - '.'
+      - 'istio-ingress'         # экспорт во входящий ns
     defaultVirtualServiceExportTo: 
-      - '.' 
+      - '.'
     defaultDestinationRuleExportTo: 
-      - '.' 
-
+      - '.'
     enablePrometheusMerge: false 
     enableTracing: true
     accessLogFile: /dev/stdout
@@ -58,7 +50,7 @@ spec:
         "authority": "%REQ(:AUTHORITY)%",
         "x_forwarded_for": "%REQ(X-FORWARDED-FOR)%",
         "user_agent": "%REQ(USER-AGENT)%",
-        "message": "Request:\npath: %REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%\nmethod: %REQ(:METHOD)%\n------------------------------->\nResponse:\nresponse_code: %RESPONSE_CODE%\nresponse_flags: %RESPONSE_FLAGS%\nresponse_code_details: %RESPONSE_CODE_DETAILS%\n\nDownstream (client -> proxy):\nFrom downstream_remote_address: %DOWNSTREAM_REMOTE_ADDRESS%\nTo downstream_local_address: %DOWNSTREAM_LOCAL_ADDRESS%\nOver protocol: %PROTOCOL%\nbytes_received: %BYTES_RECEIVED%\n------------------------------->\nUpstream (proxy -> server):\nFrom upstream_local_address: %UPSTREAM_LOCAL_ADDRESS%\nTo upstream_remote_address: %UPSTREAM_REMOTE_ADDRESS%\nOver upstream_protocol: %UPSTREAM_PROTOCOL%\nbytes_sent: %BYTES_SENT%\nupstream_transport_failure_reason: %UPSTREAM_TRANSPORT_FAILURE_REASON%\nupstream_request_attempt_count: %UPSTREAM_REQUEST_ATTEMPT_COUNT%\n\nEnvoy internals:\nroute_name: %ROUTE_NAME%\nupstream_cluster: %UPSTREAM_CLUSTER%\nconnection_termination_details: %CONNECTION_TERMINATION_DETAILS%\n"
+        "message": "Request path: %REQ(X-ENVOY-ORIGINAL-PATH?:PATH)% method: %REQ(:METHOD)% response_code: %RESPONSE_CODE%"
       }
 
   values:
@@ -75,16 +67,14 @@ spec:
       neverInjectSelector:
         - matchExpressions:
           - {key: job-name, operator: Exists}
-
     global:
       proxy:
         resources:
           requests:
-            cpu: "{{ istio_proxy_cpu_request }}"
-            memory: "{{ istio_proxy_memory_requests }}"
+            cpu: "100m"
+            memory: "128Mi"
           limits:
-            memory: "{{ istio_proxy_memory_limit }}"
-
+            memory: "1Gi"
         tracer: "none"
 
   components:
@@ -96,20 +86,19 @@ spec:
         tolerations: []
     istiodRemote:
       enabled: false
-      
 
     pilot:
       enabled: true
       k8s:
-        replicaCount: {{ istio_istiod_replicas }}
+        replicaCount: 2
         resources:
           requests:
-            cpu: {{ istio_pilot_cpu_request }}
-            memory: {{ istio_pilot_memory_request }}
+            cpu: "500m"
+            memory: "2Gi"
           limits:
-            memory: {{ istio_pilot_memory_limit }}
+            memory: "4Gi"
         nodeSelector: 
-          '{{ infra_node_selector }}': ''
+          node.kubernetes.io/role: infra
         affinity:
           podAntiAffinity:
             preferredDuringSchedulingIgnoredDuringExecution:
@@ -120,14 +109,6 @@ spec:
                       app: istiod
                       operator.istio.io/component: Pilot
                   topologyKey: kubernetes.io/hostname
-              - weight: 100
-                podAffinityTerm:
-                  labelSelector:
-                    matchLabels:
-                      app: istiod
-                      operator.istio.io/component: Pilot
-                  topologyKey: failure-domain.beta.kubernetes.io/zone
-
 
     ingressGateways:
     - name: istio-ingressgateway
@@ -135,8 +116,7 @@ spec:
       label:
         app: ingressgateway
         istio: ingressgateway
-      enabled: {{ istio_ingressgateway_enabled | bool }}
-{% if istio_ingressgateway_enabled | bool %}
+      enabled: true          # истина по умолчанию (при желании переключите)
       k8s:
         service:
           type: NodePort
@@ -156,32 +136,19 @@ spec:
               nodePort: 30023
               protocol: TCP
               name: status-port
-
-          {% if istio_ingressgateway_external_ips is defined %}
-          externalIPs:
-           {% for ip in istio_ingressgateway_external_ips %}
-            - {{ ip }}
-           {% endfor %}
-          {% endif %}
-
-        replicaCount: {{ istio_ingressgateway_replicas }}
-
+          # externalIPs можно добавить при необходимости
+        replicaCount: 2
         resources:
           requests:
-            cpu: {{ istio_ingressgateway_cpu_request }}
-            memory: {{ istio_ingressgateway_memory_request }}
+            cpu: "100m"
+            memory: "128Mi"
           limits:
-            memory: {{ istio_ingressgateway_memory_limit }}
-
+            memory: "1Gi"
         strategy:
           rollingUpdate:
             maxUnavailable: 1
-
         nodeSelector:
           node.kubernetes.io/role: infra
-          # networking.k8s.io/ingress: istio
-{% endif %}
-
 
     egressGateways:
     - name: istio-egressgateway
@@ -189,9 +156,9 @@ spec:
       label:
         app: egressgateway
         istio: egressgateway
-      enabled: {{ istio_egressgateway_enabled | bool }}
-{% if istio_egressgateway_enabled | bool %}
+      enabled: false         # выключено по умолчанию
       k8s:
+        replicaCount: 2
         service:
           ports:
             - port: 80
@@ -202,21 +169,14 @@ spec:
               targetPort: 8443
               protocol: TCP
               name: https
-
-        replicaCount: {{ istio_egressgateway_replicas }}
-
         resources:
           requests:
-            cpu: {{ istio_egressgateway_cpu_request }}
-            memory: {{ istio_egressgateway_memory_request }}
+            cpu: "100m"
+            memory: "128Mi"
           limits:
-            memory: {{ istio_egressgateway_memory_limit }}
-
+            memory: "1Gi"
         strategy:
           rollingUpdate:
             maxUnavailable: 1
-      
         nodeSelector:
           node.kubernetes.io/role: infra
-          # networking.k8s.io/egress: istio
-{% endif %}
