@@ -1,0 +1,52 @@
+global:
+  istio:
+    version: ""
+    repository: "docker-hub.binary.alfabank.ru/istio"
+    downloadUrl: "https://github.com/istio/istio/releases/download"
+  infra:
+    nodeSelector: "node.kubernetes.io/role"
+istio:
+  ingressgatewayEnabled: true
+  egressgatewayEnabled: false
+  prometheusScrape: true
+  cpuLimitsDisabled: true
+  resources:
+    proxy:
+      cpu:
+        request: "100m"
+        limit: "2000m"
+      memory:
+        request: "128Mi"
+        limit: "1Gi"
+    pilot:
+      cpu:
+        request: "500m"
+      memory:
+        request: "2Gi"
+        limit: "4Gi"
+    ingressgateway:
+      cpu:
+        request: "100m"
+      memory:
+        request: "128Mi"
+        limit: "1Gi"
+    egressgateway:
+      cpu:
+        request: "100m"
+      memory:
+        request: "128Mi"
+        limit: "1Gi"
+  components:
+    ingressgateway:
+      enabled: true
+      replicas: 2
+      externalIPs: []
+    egressgateway:
+      enabled: false
+      replicas: 2
+    istiod:
+      replicas: 2
+prometheus:
+  operator:
+    enabled: false
+    namespace: "monitoring"

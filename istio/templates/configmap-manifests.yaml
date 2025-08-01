@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: istio-installer-manifests
+data:
+  istio-operator.yml: |
+{{ .Files.Get "files/istio-operator.yml" | indent 4 }}
+  istio-default-gateway.yml: |
+{{ .Files.Get "files/istio-default-gateway.yml" | indent 4 }}
+  istio-scrapping-sm.yml: |
+{{ .Files.Get "files/istio-scrapping-sm.yml" | indent 4 }}
+  istio-sidecar-injector.yaml: |
+{{ .Files.Get "files/istio-sidecar-injector.yaml" | indent 4 }}

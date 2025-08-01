@@ -1,0 +1,222 @@
+apiVersion: install.istio.io/v1alpha1
+kind: IstioOperator
+metadata:
+  namespace: istio-system
+  labels:
+    "app.kubernetes.io/managed-by": Ansible
+spec:
+  hub: {{ istio_repository }}
+  tag: {{ istio_version }}
+
+  meshConfig:
+    ingressControllerMode: 'DEFAULT'
+
+    defaultConfig:
+      holdApplicationUntilProxyStarts: true
+      tracing: {}
+      proxyMetadata: {
+        "BOOTSTRAP_XDS_AGENT": "true"
+      }
+      proxyStatsMatcher:
+        inclusionRegexps:
+        - mongo.*
+
+    extensionProviders:
+      - name: zipkin-jaeger
+        zipkin:
+          service: jaeger-operator-jaeger-collector.jaeger-operator.svc.cluster.local
+          port: 9411
+
+    outboundTrafficPolicy:
+      mode: ALLOW_ANY
+
+    #  Current namespace
+    defaultServiceExportTo: 
+      - '.' 
+{% if istio_ingressgateway_enabled | bool %}
+      - 'istio-ingress' 
+{% endif %}
+    defaultVirtualServiceExportTo: 
+      - '.' 
+    defaultDestinationRuleExportTo: 
+      - '.' 
+
+    enablePrometheusMerge: false 
+    enableTracing: true
+    accessLogFile: /dev/stdout
+    accessLogEncoding: JSON
+    accessLogFormat: |
+      {
+        "@timestamp": "%START_TIME%",
+        "trace_id": "%REQ(X-B3-TRACEID)%",
+        "span_id": "%REQ(X-B3-SPANID)%",
+        "r_method": "%REQ(:METHOD)%",
+        "request_uri": "%REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%",
+        "response_time": "%DURATION%",
+        "request_time": "%REQ(x-envoy-upstream-service-time)%",
+        "response_code": "%RESPONSE_CODE%",
+        "authority": "%REQ(:AUTHORITY)%",
+        "x_forwarded_for": "%REQ(X-FORWARDED-FOR)%",
+        "user_agent": "%REQ(USER-AGENT)%",
+        "message": "Request:\npath: %REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%\nmethod: %REQ(:METHOD)%\n------------------------------->\nResponse:\nresponse_code: %RESPONSE_CODE%\nresponse_flags: %RESPONSE_FLAGS%\nresponse_code_details: %RESPONSE_CODE_DETAILS%\n\nDownstream (client -> proxy):\nFrom downstream_remote_address: %DOWNSTREAM_REMOTE_ADDRESS%\nTo downstream_local_address: %DOWNSTREAM_LOCAL_ADDRESS%\nOver protocol: %PROTOCOL%\nbytes_received: %BYTES_RECEIVED%\n------------------------------->\nUpstream (proxy -> server):\nFrom upstream_local_address: %UPSTREAM_LOCAL_ADDRESS%\nTo upstream_remote_address: %UPSTREAM_REMOTE_ADDRESS%\nOver upstream_protocol: %UPSTREAM_PROTOCOL%\nbytes_sent: %BYTES_SENT%\nupstream_transport_failure_reason: %UPSTREAM_TRANSPORT_FAILURE_REASON%\nupstream_request_attempt_count: %UPSTREAM_REQUEST_ATTEMPT_COUNT%\n\nEnvoy internals:\nroute_name: %ROUTE_NAME%\nupstream_cluster: %UPSTREAM_CLUSTER%\nconnection_termination_details: %CONNECTION_TERMINATION_DETAILS%\n"
+      }
+
+  values:
+    pilot:
+      autoscaleEnabled: false
+      env:
+        PILOT_ENABLE_MONGO_FILTER: true
+    gateways:
+      istio-ingressgateway:
+        autoscaleEnabled: false
+      istio-egressgateway:
+        autoscaleEnabled: false
+    sidecarInjectorWebhook:
+      neverInjectSelector:
+        - matchExpressions:
+          - {key: job-name, operator: Exists}
+
+    global:
+      proxy:
+        resources:
+          requests:
+            cpu: "{{ istio_proxy_cpu_request }}"
+            memory: "{{ istio_proxy_memory_requests }}"
+          limits:
+            memory: "{{ istio_proxy_memory_limit }}"
+
+        tracer: "none"
+
+  components:
+    base:
+      enabled: true
+    cni:
+      enabled: true
+      k8s:
+        tolerations: []
+    istiodRemote:
+      enabled: false
+      
+
+    pilot:
+      enabled: true
+      k8s:
+        replicaCount: {{ istio_istiod_replicas }}
+        resources:
+          requests:
+            cpu: {{ istio_pilot_cpu_request }}
+            memory: {{ istio_pilot_memory_request }}
+          limits:
+            memory: {{ istio_pilot_memory_limit }}
+        nodeSelector: 
+          '{{ infra_node_selector }}': ''
+        affinity:
+          podAntiAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+              - weight: 100
+                podAffinityTerm:
+                  labelSelector:
+                    matchLabels:
+                      app: istiod
+                      operator.istio.io/component: Pilot
+                  topologyKey: kubernetes.io/hostname
+              - weight: 100
+                podAffinityTerm:
+                  labelSelector:
+                    matchLabels:
+                      app: istiod
+                      operator.istio.io/component: Pilot
+                  topologyKey: failure-domain.beta.kubernetes.io/zone
+
+
+    ingressGateways:
+    - name: istio-ingressgateway
+      namespace: istio-ingress
+      label:
+        app: ingressgateway
+        istio: ingressgateway
+      enabled: {{ istio_ingressgateway_enabled | bool }}
+{% if istio_ingressgateway_enabled | bool %}
+      k8s:
+        service:
+          type: NodePort
+          ports:
+            - port: 80
+              targetPort: 8080
+              nodePort: 30020
+              protocol: TCP
+              name: http
+            - port: 443
+              targetPort: 8443
+              nodePort: 30021
+              protocol: TCP
+              name: https
+            - port: 9090
+              targetPort: 15021
+              nodePort: 30023
+              protocol: TCP
+              name: status-port
+
+          {% if istio_ingressgateway_external_ips is defined %}
+          externalIPs:
+           {% for ip in istio_ingressgateway_external_ips %}
+            - {{ ip }}
+           {% endfor %}
+          {% endif %}
+
+        replicaCount: {{ istio_ingressgateway_replicas }}
+
+        resources:
+          requests:
+            cpu: {{ istio_ingressgateway_cpu_request }}
+            memory: {{ istio_ingressgateway_memory_request }}
+          limits:
+            memory: {{ istio_ingressgateway_memory_limit }}
+
+        strategy:
+          rollingUpdate:
+            maxUnavailable: 1
+
+        nodeSelector:
+          node.kubernetes.io/role: infra
+          # networking.k8s.io/ingress: istio
+{% endif %}
+
+
+    egressGateways:
+    - name: istio-egressgateway
+      namespace: istio-egress
+      label:
+        app: egressgateway
+        istio: egressgateway
+      enabled: {{ istio_egressgateway_enabled | bool }}
+{% if istio_egressgateway_enabled | bool %}
+      k8s:
+        service:
+          ports:
+            - port: 80
+              targetPort: 8080
+              protocol: TCP
+              name: http
+            - port: 443
+              targetPort: 8443
+              protocol: TCP
+              name: https
+
+        replicaCount: {{ istio_egressgateway_replicas }}
+
+        resources:
+          requests:
+            cpu: {{ istio_egressgateway_cpu_request }}
+            memory: {{ istio_egressgateway_memory_request }}
+          limits:
+            memory: {{ istio_egressgateway_memory_limit }}
+
+        strategy:
+          rollingUpdate:
+            maxUnavailable: 1
+      
+        nodeSelector:
+          node.kubernetes.io/role: infra
+          # networking.k8s.io/egress: istio
+{% endif %}

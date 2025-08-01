@@ -1,0 +1,232 @@
+{% if prometheus_operator_enabled | bool %}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: istio-metrics-aggregation
+  namespace: {{prometheus_operator_namespace}}
+  labels:
+    monitoring: istiod
+    release: istio
+    app.kubernetes.io/name: istio-prometheus
+    "app.kubernetes.io/managed-by": Ansible
+spec:
+  groups:
+  - name: "istio.metricsAggregation-rules"
+    interval: 5s
+    rules:
+    - record: "workload:istio_requests_total"
+      expr: "sum without(instance, kubernetes_namespace, kubernetes_pod_name) (istio_requests_total)"
+
+    - record: "workload:istio_request_duration_milliseconds_count"
+      expr: "sum without(instance, kubernetes_namespace, kubernetes_pod_name) (istio_request_duration_milliseconds_count)"
+    - record: "workload:istio_request_duration_milliseconds_sum"
+      expr: "sum without(instance, kubernetes_namespace, kubernetes_pod_name) (istio_request_duration_milliseconds_sum)"
+    - record: "workload:istio_request_duration_milliseconds_bucket"
+      expr: "sum without(instance, kubernetes_namespace, kubernetes_pod_name) (istio_request_duration_milliseconds_bucket)"
+
+    - record: "workload:istio_request_bytes_count"
+      expr: "sum without(instance, kubernetes_namespace, kubernetes_pod_name) (istio_request_bytes_count)"
+    - record: "workload:istio_request_bytes_sum"
+      expr: "sum without(instance, kubernetes_namespace, kubernetes_pod_name) (istio_request_bytes_sum)"
+    - record: "workload:istio_request_bytes_bucket"
+      expr: "sum without(instance, kubernetes_namespace, kubernetes_pod_name) (istio_request_bytes_bucket)"
+
+    - record: "workload:istio_response_bytes_count"
+      expr: "sum without(instance, kubernetes_namespace, kubernetes_pod_name) (istio_response_bytes_count)"
+    - record: "workload:istio_response_bytes_sum"
+      expr: "sum without(instance, kubernetes_namespace, kubernetes_pod_name) (istio_response_bytes_sum)"
+    - record: "workload:istio_response_bytes_bucket"
+      expr: "sum without(instance, kubernetes_namespace, kubernetes_pod_name) (istio_response_bytes_bucket)"
+
+    - record: "workload:istio_tcp_sent_bytes_total"
+      expr: "sum without(instance, kubernetes_namespace, kubernetes_pod_name) (istio_tcp_sent_bytes_total)"
+    - record: "workload:istio_tcp_received_bytes_total"
+      expr: "sum without(instance, kubernetes_namespace, kubernetes_pod_name) (istio_tcp_received_bytes_total)"
+    - record: "workload:istio_tcp_connections_opened_total"
+      expr: "sum without(instance, kubernetes_namespace, kubernetes_pod_name) (istio_tcp_connections_opened_total)"
+    - record: "workload:istio_tcp_connections_closed_total"
+      expr: "sum without(instance, kubernetes_namespace, kubernetes_pod_name) (istio_tcp_connections_closed_total)"
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: istio-envoy-stats-monitor
+  namespace: {{prometheus_operator_namespace}}
+  labels:
+    monitoring: istio-proxies
+    release: istio
+    "app.kubernetes.io/managed-by": Ansible
+spec:
+  selector:
+    matchExpressions:
+    - {key: istio-prometheus-ignore, operator: DoesNotExist}
+  namespaceSelector:
+    matchNames: 
+      - 'corp-*'
+      - mks
+      - infra
+  jobLabel: envoy-stats
+  endpoints:
+  - path: /stats/prometheus
+    relabelings:
+    - action: keep
+      sourceLabels: [__meta_kubernetes_pod_container_name]
+      regex: "istio-proxy"
+    - action: keep
+      sourceLabels: [__meta_kubernetes_pod_annotationpresent_prometheus_io_scrape]
+    - sourceLabels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+      action: replace
+      regex: ([^:]+)(?::\d+)?;(\d+)
+      replacement: $1:$2
+      targetLabel: __address__
+    - action: labeldrop
+      regex: "__meta_kubernetes_pod_label_(.+)"
+    - sourceLabels: [__meta_kubernetes_namespace]
+      action: replace
+      targetLabel: namespace
+    - sourceLabels: [__meta_kubernetes_pod_name]
+      action: replace
+      targetLabel: pod_name
+    - action: drop
+      sourceLabels: [__name__]
+      regex: "istio_agent_.*|istiod_.*|istio_build|citadel_.*|galley_.*|pilot_[^p].*|envoy_cluster_[^u].*|envoy_cluster_update.*|envoy_listener_[^dh].*|envoy_server_[^mu].*|envoy_wasm_.*"
+    - action: labeldrop
+      regex: "chart|destination_app|destination_version|heritage|.*operator.*|istio.*|release|security_istio_io_.*|service_istio_io_.*|sidecar_istio_io_inject|source_app|source_version"
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: istio-component-monitor
+  namespace: {{prometheus_operator_namespace}}
+  labels:
+    monitoring: istio-components
+    release: istio
+    "app.kubernetes.io/managed-by": Ansible
+spec:
+  jobLabel: istio
+  targetLabels: [app]
+  selector:
+    matchExpressions:
+    - {key: istio, operator: In, values: [pilot]}
+  namespaceSelector:
+    any: true
+  endpoints:
+  - port: http-monitoring
+    interval: 30s
+{% endif %}
+---
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMRule
+metadata:
+  name: istio-metrics-aggregation
+  namespace: victoria-metrics-k8s-stack
+  labels:
+    monitoring: istiod
+    release: istio
+    app.kubernetes.io/name: istio-prometheus
+    "app.kubernetes.io/managed-by": Ansible
+spec:
+  groups:
+  - name: "istio.metricsAggregation-rules"
+    rules:
+    - record: "workload:istio_requests_total"
+      expr: "sum without(instance, kubernetes_namespace, kubernetes_pod_name) (istio_requests_total)"
+
+    - record: "workload:istio_request_duration_milliseconds_count"
+      expr: "sum without(instance, kubernetes_namespace, kubernetes_pod_name) (istio_request_duration_milliseconds_count)"
+    - record: "workload:istio_request_duration_milliseconds_sum"
+      expr: "sum without(instance, kubernetes_namespace, kubernetes_pod_name) (istio_request_duration_milliseconds_sum)"
+    - record: "workload:istio_request_duration_milliseconds_bucket"
+      expr: "sum without(instance, kubernetes_namespace, kubernetes_pod_name) (istio_request_duration_milliseconds_bucket)"
+
+    - record: "workload:istio_request_bytes_count"
+      expr: "sum without(instance, kubernetes_namespace, kubernetes_pod_name) (istio_request_bytes_count)"
+    - record: "workload:istio_request_bytes_sum"
+      expr: "sum without(instance, kubernetes_namespace, kubernetes_pod_name) (istio_request_bytes_sum)"
+    - record: "workload:istio_request_bytes_bucket"
+      expr: "sum without(instance, kubernetes_namespace, kubernetes_pod_name) (istio_request_bytes_bucket)"
+
+    - record: "workload:istio_response_bytes_count"
+      expr: "sum without(instance, kubernetes_namespace, kubernetes_pod_name) (istio_response_bytes_count)"
+    - record: "workload:istio_response_bytes_sum"
+      expr: "sum without(instance, kubernetes_namespace, kubernetes_pod_name) (istio_response_bytes_sum)"
+    - record: "workload:istio_response_bytes_bucket"
+      expr: "sum without(instance, kubernetes_namespace, kubernetes_pod_name) (istio_response_bytes_bucket)"
+
+    - record: "workload:istio_tcp_sent_bytes_total"
+      expr: "sum without(instance, kubernetes_namespace, kubernetes_pod_name) (istio_tcp_sent_bytes_total)"
+    - record: "workload:istio_tcp_received_bytes_total"
+      expr: "sum without(instance, kubernetes_namespace, kubernetes_pod_name) (istio_tcp_received_bytes_total)"
+    - record: "workload:istio_tcp_connections_opened_total"
+      expr: "sum without(instance, kubernetes_namespace, kubernetes_pod_name) (istio_tcp_connections_opened_total)"
+    - record: "workload:istio_tcp_connections_closed_total"
+      expr: "sum without(instance, kubernetes_namespace, kubernetes_pod_name) (istio_tcp_connections_closed_total)"
+---
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMPodScrape
+metadata:
+  name: istio-envoy-stats-monitor
+  namespace: istio-system
+  labels:
+    monitoring: istio-proxies
+    release: istio
+    "app.kubernetes.io/managed-by": Ansible
+spec:
+  selector:
+    matchExpressions:
+    - {key: istio-prometheus-ignore, operator: DoesNotExist}
+  namespaceSelector:
+    any: true
+  jobLabel: istio-envoy-stats
+  podMetricsEndpoints:
+  - path: /stats/prometheus
+    port: http-envoy-prom
+    relabelConfigs:
+    - action: keep
+      sourceLabels: [__meta_kubernetes_pod_container_name]
+      regex: "istio-proxy"
+    - action: keep
+      sourceLabels: [__meta_kubernetes_pod_annotationpresent_prometheus_io_scrape]
+    - sourceLabels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+      action: replace
+      regex: ([^:]+)(?::\d+)?;(\d+)
+      replacement: $1:$2
+      targetLabel: __address__
+    - action: replace
+      sourceLabels:
+        - __meta_kubernetes_pod_label_app
+      targetLabel: service
+    - action: labeldrop
+      regex: "__meta_kubernetes_pod_label_(.+)"
+    - sourceLabels: [__meta_kubernetes_namespace]
+      action: replace
+      targetLabel: namespace
+    - sourceLabels: [__meta_kubernetes_pod_name]
+      action: replace
+      targetLabel: pod_name
+    - action: drop
+      source_labels: [__name__]
+      regex: istio_agent_.*|istiod_.*|istio_build|citadel_.*|galley_.*|pilot_[^p].*|envoy_cluster_[^u].*|envoy_cluster_update.*|envoy_listener_[^dh].*|envoy_server_[^mu].*|envoy_wasm_.*
+    - action: labeldrop
+      regex: chart|destination_app|destination_version|heritage|.*operator.*|istio.*|release|security_istio_io_.*|service_istio_io_.*|sidecar_istio_io_inject|source_app|source_version
+      
+---
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMServiceScrape
+metadata:
+  name: istio-component-monitor
+  namespace: victoria-metrics-k8s-stack
+  labels:
+    monitoring: istio-components
+    release: istio
+    "app.kubernetes.io/managed-by": Ansible
+spec:
+  jobLabel: istio
+  targetLabels: [app]
+  selector:
+    matchExpressions:
+    - {key: istio, operator: In, values: [pilot]}
+  namespaceSelector:
+    any: true
+  endpoints:
+  - port: http-monitoring

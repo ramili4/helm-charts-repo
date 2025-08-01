@@ -1,0 +1,31 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: istio-install
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-delete-policy": hook-succeeded
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: installer
+        image: alpine:3.18
+        command: ["/bin/sh","/scripts/install-istio.sh"]
+        env:
+        - name: ISTIO_VERSION
+          value: "{{ .Values.global.istio.version | default .Chart.AppVersion }}"
+        volumeMounts:
+        - name: scripts
+          mountPath: /scripts
+        - name: manifests
+          mountPath: /manifests
+      volumes:
+      - name: scripts
+        configMap:
+          name: istio-installer-scripts
+          defaultMode: 0755
+      - name: manifests
+        configMap:
+          name: istio-installer-manifests
