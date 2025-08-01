@@ -3,44 +3,21 @@ kind: ServiceAccount
 metadata:
   name: istio-installer
   namespace: {{ .Release.Namespace }}
+
 ---
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: istio-installer
-rules:
-  # базовые объекты
-  - apiGroups: [""]
-    resources: ["namespaces", "configmaps", "secrets", "serviceaccounts", "services"]
-    verbs:     ["get", "list", "watch", "create", "update", "patch"]
-  # Deployment, DaemonSet
-  - apiGroups: ["apps"]
-    resources: ["deployments", "daemonsets"]
-    verbs:     ["get", "list", "watch", "create", "update", "patch"]
-  # PDB
-  - apiGroups: ["policy"]
-    resources: ["poddisruptionbudgets"]
-    verbs:     ["get", "list", "watch", "create", "update", "patch"]
-  # CRD Istio
-  - apiGroups: ["install.istio.io"]
-    resources: ["istiooperators"]
-    verbs: ["*"]
-  - apiGroups: ["networking.istio.io"]
-    resources: ["gateways", "virtualservices", "destinationrules"]
-    verbs: ["*"]
-  # RBAC, если istioctl создаёт роли
-  - apiGroups: ["rbac.authorization.k8s.io"]
-    resources: ["clusterroles", "clusterrolebindings", "roles", "rolebindings"]
-    verbs: ["get", "list", "watch", "create", "update", "patch"]
----
+# Вместо ручного перечисления ВСЕХ verbs/resources
+# привязываем сервис-аккаунт к cluster-admin.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: istio-installer
+  name: istio-installer-cluster-admin
+  annotations:
+    # hook чтобы удалялся при helm uninstall
+    "helm.sh/hook": pre-install,pre-upgrade,pre-delete
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: istio-installer
+  name: cluster-admin
 subjects:
   - kind: ServiceAccount
     name: istio-installer
