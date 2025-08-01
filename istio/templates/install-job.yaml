@@ -12,8 +12,12 @@ spec:
       serviceAccountName: default
       containers:
       - name: installer
-        image: yauritux/busybox-curl:latest             # ← образ «для проверки сети»
-        command: ["/bin/sh","-c","/scripts/install-istio.sh"]
+        image: alpine:3.19  # ← Better choice
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          apk add --no-cache curl tar kubectl
+          /scripts/install-istio.sh
         env:
         - name: ISTIO_VERSION
           value: "{{ .Values.global.istio.version }}"
