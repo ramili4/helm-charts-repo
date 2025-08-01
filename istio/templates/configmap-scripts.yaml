@@ -7,32 +7,41 @@ data:
     #!/bin/sh
     set -e
 
-    # Берём версию только для каталогов и флага istioctl, URL полон
-    ISTIO_VERSION="{{ .Values.global.istio.version }}"
-    DOWNLOAD="{{ .Values.global.istio.downloadUrl }}"
+    echo "=== Istio binary installer ==="
+    echo "Version: ${ISTIO_VERSION}"
+    echo "URL:     ${DOWNLOAD_URL}"
 
-    echo "Downloading istioctl ${ISTIO_VERSION}"
-    curl -sSL "${DOWNLOAD}" -o istioctl.tar.gz
+    mkdir -p /tmp/istio-${ISTIO_VERSION}
+    cd       /tmp/istio-${ISTIO_VERSION}
+
+    echo "* Downloading istioctl..."
+    curl -sSL "${DOWNLOAD_URL}" -o istioctl.tar.gz
+
+    echo "* Extracting..."
     tar -xzf istioctl.tar.gz
     chmod +x istioctl
 
-    echo "Installing Istio..."
+    echo "* Installing Istio (istioctl install)..."
     ./istioctl install -f /manifests/istio-operator.yml -y --revision "${ISTIO_VERSION}"
 
     {{- if .Values.istio.ingressgatewayEnabled }}
-    echo "Applying default gateway..."
+    echo "* Applying default gateway..."
     kubectl apply -f /manifests/istio-default-gateway.yml
     {{- end }}
 
     {{- if .Values.istio.prometheusScrape }}
-    echo "Applying ServiceMonitor..."
+    echo "* Applying ServiceMonitor..."
     kubectl apply -f /manifests/istio-scrapping-sm.yml
     {{- end }}
 
     {{- if .Values.istio.cpuLimitsDisabled }}
-    echo "Patching sidecar injector (CPU limits off)..."
-    kubectl patch -f /manifests/istio-sidecar-injector.yaml --patch-file /manifests/istio-sidecar-injector.yaml
+    echo "* Patching sidecar injector (CPU limits off)..."
+    kubectl patch -f /manifests/istio-sidecar-injector.yaml \
+                  --patch-file /manifests/istio-sidecar-injector.yaml
     {{- end }}
 
-    echo "Restarting istiod..."
-    kubectl rollout restart deployment istiod -n istio-system
+    echo "* Restarting istiod..."
+    kubectl rollout restart deployment/istiod -n istio-system
+    kubectl rollout status  deployment/istiod -n istio-system --timeout=300s
+
+    echo "=== Istio installation completed ==="
