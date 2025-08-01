@@ -1,14 +1,7 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: istio-installer-scripts
-data:
   install-istio.sh: |
     #!/bin/sh
     set -e
-
-    # curlimages/curl уже содержит curl; нужен только tar
-    apk add --no-cache tar
+    apk add --no-cache tar  # curl уже есть в образе
 
     ISTIO_VERSION="{{ .Values.global.istio.version }}"
     DOWNLOAD_URL="{{ .Values.global.istio.downloadUrl }}"
@@ -26,8 +19,13 @@ data:
     echo "* Extracting..."
     tar -xzf istioctl.tar.gz
 
-    # 🔧 ПАТЧ: перемещаем бинарь из подпапки в рабочий каталог
-    mv istioctl-*/bin/istioctl ./          # <-- добавлено
+    # 🔧  Универсально: если бинаря ещё нет в корне, пытаемся достать из подпапки
+    if [ ! -f ./istioctl ]; then
+      mv istioctl-*/bin/istioctl ./ || {
+        echo "❌ istioctl binary not found after extraction";
+        exit 1;
+      }
+    fi
     chmod +x istioctl
 
     echo "* Installing Istio..."
@@ -48,3 +46,4 @@ data:
 
     kubectl rollout restart deployment/istiod -n istio-system
     kubectl rollout status  deployment/istiod -n istio-system --timeout=300s
+    echo "✅ Istio installation completed"
