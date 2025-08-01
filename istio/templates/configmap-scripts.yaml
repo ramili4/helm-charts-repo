@@ -7,7 +7,7 @@ data:
     #!/bin/sh
     set -e
 
-    # curl уже есть в образе curlimages, нужен только tar
+    # образ curlimages/curl уже содержит curl; добавим tar
     apk add --no-cache tar
 
     ISTIO_VERSION="{{ .Values.global.istio.version }}"
@@ -17,27 +17,30 @@ data:
     echo "Version: ${ISTIO_VERSION}"
     echo "URL:     ${DOWNLOAD_URL}"
 
-    mkdir -p /tmp/istio-${ISTIO_VERSION}
-    cd       /tmp/istio-${ISTIO_VERSION}
-
-    echo "* Downloading istioctl..."
+    # ── 1. скачиваем istioctl ──────────────────────────────────────────
+    mkdir -p /tmp/istio-${ISTIO_VERSION} && cd /tmp/istio-${ISTIO_VERSION}
     curl -sSL "${DOWNLOAD_URL}" -o istioctl.tar.gz
-
-    echo "* Extracting..."
     tar -xzf istioctl.tar.gz
 
-    # Если бинарь в подпапке — переносим
-    if [ ! -f ./istioctl ]; then
-      mv istioctl-*/bin/istioctl ./ || {
-        echo "❌ istioctl binary not found after extraction"
-        exit 1
-      }
-    fi
+    # если бинарь лежит внутри подпапки — достаём
+    [ -f ./istioctl ] || mv istioctl-*/bin/istioctl ./ || {
+      echo "❌ istioctl binary not found after extraction" >&2
+      exit 1
+    }
     chmod +x istioctl
 
-    echo "* Installing Istio..."
+    # ── 2. создаём нужные namespace'ы (если включены) ─────────────────
+    {{- if .Values.istio.ingressgatewayEnabled }}
+    kubectl get ns istio-ingress >/dev/null 2>&1 || kubectl create namespace istio-ingress
+    {{- end }}
+    {{- if .Values.istio.egressgatewayEnabled }}
+    kubectl get ns istio-egress  >/dev/null 2>&1 || kubectl create namespace istio-egress
+    {{- end }}
+
+    # ── 3. устанавливаем Istio ────────────────────────────────────────
     ./istioctl install -f /manifests/istio-operator.yml -y
 
+    # ── 4. дополнительные манифесты ───────────────────────────────────
     {{- if .Values.istio.ingressgatewayEnabled }}
     kubectl apply -f /manifests/istio-default-gateway.yml
     {{- end }}
@@ -51,6 +54,8 @@ data:
                   --patch-file /manifests/istio-sidecar-injector.yaml
     {{- end }}
 
+    # ── 5. рестарт istiod ─────────────────────────────────────────────
     kubectl rollout restart deployment/istiod -n istio-system
-    kubectl rollout status  deployment/istiod -n istio-system --timeout=300s
+    kubectl rollout status deployment/istiod -n istio-system --timeout=300s
+
     echo "✅ Istio installation completed"
