@@ -12,7 +12,7 @@ spec:
       serviceAccountName: default
       containers:
       - name: installer
-        image: curlimages/curl:8.7.1              # ← образ «для проверки сети»
+        image: yauritux/busybox-curl:latest             # ← образ «для проверки сети»
         command: ["/bin/sh","-c","/scripts/install-istio.sh"]
         env:
         - name: ISTIO_VERSION
