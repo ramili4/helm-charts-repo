@@ -36,7 +36,7 @@ data:
     chmod +x istioctl
 
     echo "* Installing Istio..."
-    ./istioctl install -f /manifests/istio-operator.yml -y --revision "${ISTIO_VERSION}"
+    ./istioctl install -f /manifests/istio-operator.yml -y
 
     {{- if .Values.istio.ingressgatewayEnabled }}
     kubectl apply -f /manifests/istio-default-gateway.yml
