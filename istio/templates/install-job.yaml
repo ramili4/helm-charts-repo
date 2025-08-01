@@ -9,13 +9,16 @@ spec:
   template:
     spec:
       restartPolicy: Never
+      serviceAccountName: default
       containers:
       - name: installer
-        image: alpine:3.18
-        command: ["/bin/sh","/scripts/install-istio.sh"]
+        image: bitnami/kubectl:1.29.0        # уже содержит curl, tar, kubectl
+        command: ["/bin/sh","-c","/scripts/install-istio.sh"]
         env:
         - name: ISTIO_VERSION
-          value: "{{ .Values.global.istio.version | default .Chart.AppVersion }}"
+          value: "{{ .Values.global.istio.version }}"
+        - name: DOWNLOAD_URL
+          value: "{{ .Values.global.istio.downloadUrl }}"
         volumeMounts:
         - name: scripts
           mountPath: /scripts
@@ -25,7 +28,7 @@ spec:
       - name: scripts
         configMap:
           name: istio-installer-scripts
-          defaultMode: 0755
+          defaultMode: 0755        # скрипт сразу исполняемый
       - name: manifests
         configMap:
           name: istio-installer-manifests
