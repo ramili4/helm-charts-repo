@@ -362,9 +362,10 @@ vmcluster:
       storage:
         volumeClaimTemplate:
           spec:
+            storageClass: openebs-hostpath
             resources:
               requests:
-                storage: 10Gi
+                storage: 1Gi
       resources:
         {}
         # limits:
@@ -382,7 +383,7 @@ vmcluster:
           spec:
             resources:
               requests:
-                storage: 2Gi
+                storage: 1Gi
       resources:
         {}
         # limits:
