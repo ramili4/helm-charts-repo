@@ -12,6 +12,23 @@ global:
     dnsDomain: cluster.local.
 
 # -- Override chart name
+nameOverride: vm
+fullnameOverride: vm-stack
+
+kubeControllerManager:
+  service:
+    name: kube-controller-manager
+    
+kubeScheduler:
+  service:
+    name: kube-scheduler
+
+# Можно еще больше сократить другие компоненты
+vmagent:
+  name: vmagent
+  
+vmcluster:
+  name: vmcluster
 nameOverride: ""
 # -- Resource full name override
 fullnameOverride: ""
