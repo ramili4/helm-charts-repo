@@ -304,6 +304,7 @@ vmsingle:
     storage:
       accessModes:
         - ReadWriteOnce
+      storageClassName: openebs-hostpath-vm  
       resources:
         requests:
           storage: 2Gi
