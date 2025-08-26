@@ -1,0 +1,34 @@
+grafana:
+  enabled: true
+  service:
+    type: NodePort
+    port: 80           # сервисный порт
+    targetPort: 3000   # порт контейнера grafana
+    nodePort: 31398    # фиксированный NodePort
+  env:                 # чтобы URL в графане совпадал с тем, как ты её открываешь
+    GF_SERVER_DOMAIN: grafana.ramili4.win
+    GF_SERVER_ROOT_URL: http://grafana.ramili4.win:31398/
+    GF_SERVER_SERVE_FROM_SUB_PATH: "false"
+  ingress:
+    enabled: false     # Istio будем настраивать Gateway/VS, Ingress тут не нужен
+
+# === Отключаем Single, включаем Cluster и режем vmstorage до 2Gi ===
+vmsingle:
+  enabled: false
+
+vmcluster:
+  enabled: true
+  spec:
+    replicationFactor: 1
+    vminsert:
+      replicaCount: 1
+    vmselect:
+      replicaCount: 1
+    vmstorage:
+      replicaCount: 1
+      storage:
+        volumeClaimTemplate:
+          spec:
+            resources:
+              requests:
+                storage: 2Gi
