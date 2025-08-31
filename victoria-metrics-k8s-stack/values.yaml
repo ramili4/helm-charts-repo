@@ -29,9 +29,9 @@ vmagent:
   
 vmcluster:
   name: vmcluster
-nameOverride: ""
+nameOverride: "vm"
 # -- Resource full name override
-fullnameOverride: ""
+fullnameOverride: "vm"
 # -- Tenant to use for Grafana datasources and remote write
 tenant: "0"
 # -- If this chart is used in "Argocd" with "releaseName" field then
