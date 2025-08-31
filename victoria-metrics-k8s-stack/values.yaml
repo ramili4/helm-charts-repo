@@ -307,7 +307,7 @@ vmsingle:
       storageClassName: openebs-hostpath
       resources:
         requests:
-          storage: 2Gi
+          storage: 1Gi
   ingress:
     # -- Enable deployment of ingress for server component
     enabled: false
