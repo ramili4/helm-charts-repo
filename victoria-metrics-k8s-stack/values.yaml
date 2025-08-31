@@ -362,6 +362,7 @@ vmcluster:
       storage:
         volumeClaimTemplate:
           spec:
+            storageClass: openebs-hostpath
             resources:
               requests:
                 storage: 1Gi
