@@ -10,7 +10,6 @@ spec:
   background: {{ .Values.policy.runAsNonRoot.background }}
   rules:
     - name: run-as-non-root
-      skipBackgroundRequests: true
       match:
         any:
         - resources:
@@ -33,7 +32,6 @@ spec:
         {{- end }}
       {{- end }}
       validate:
-        allowExistingViolations: true
         message: >-
           Running as root is not allowed. Either set spec.securityContext.runAsNonRoot=true
           or per-container securityContext.runAsNonRoot=true.
