@@ -1,7 +1,7 @@
 policy:
   runAsNonRoot:
     enabled: true
-    validationFailureAction: Audit
+    validationFailureAction: Enforce
     excludeByLabel:
       - namespace: ttt
         matchLabels:
