@@ -1,5 +1,6 @@
 policy:
   runAsNonRoot:
+    enabled: true
     excludeNamespaces:
       - kube-system
       - kyverno
