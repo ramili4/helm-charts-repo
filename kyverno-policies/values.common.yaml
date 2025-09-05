@@ -1,0 +1,7 @@
+policy:
+  runAsNonRoot:
+    excludeNamespaces:
+      - kube-system
+      - kyverno
+      - istio-system
+      - calico-system

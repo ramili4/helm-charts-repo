@@ -1,0 +1,3 @@
+policy:
+  runAsNonRoot:
+    validationFailureAction: Audit

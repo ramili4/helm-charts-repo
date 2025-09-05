@@ -1,0 +1,15 @@
+policy:
+  runAsNonRoot:
+    enabled: true
+    validationFailureAction: Audit
+    background: true
+    # Global namespace exclusions
+    excludeNamespaces:
+      - kube-system
+      - kyverno
+      - istio-system
+    # Label-based exclusions per-namespace
+    excludeByLabel: []
+    # - namespace: ttt
+    #   matchLabels:
+    #     app: istio-gateway

@@ -1,0 +1,7 @@
+policy:
+  runAsNonRoot:
+    validationFailureAction: Audit
+    excludeByLabel:
+      - namespace: ttt
+        matchLabels:
+          app: istio-gateway
